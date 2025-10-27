@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "hanumath/n8n-task:latest"
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub')  // Jenkins ID for Docker Hub login
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub')
     }
 
     stages {
