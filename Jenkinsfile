@@ -4,23 +4,38 @@ pipeline {
     environment {
         DOCKER_IMAGE = "hanumath/n8n-task:latest"
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
+        PNPM_STORE = "/var/lib/jenkins/.pnpm-store"
     }
 
     stages {
 
         stage('Checkout Code') {
             steps {
+                echo "Cloning repository..."
                 checkout scm
             }
         }
 
-        stage('Build and Compile n8n') {
+        stage('Prepare Environment') {
             steps {
                 script {
-                    echo "Installing dependencies and building n8n..."
+                    echo "Setting up Node, Corepack, and pnpm..."
                     sh '''
+                        mkdir -p ${PNPM_STORE}
+                        export PNPM_STORE_PATH=${PNPM_STORE}
                         corepack enable
                         corepack prepare pnpm@10.18.3 --activate
+                    '''
+                }
+            }
+        }
+
+        stage('Install Dependencies & Build n8n') {
+            steps {
+                script {
+                    echo "Installing dependencies and building source..."
+                    sh '''
+                        export PNPM_STORE_PATH=${PNPM_STORE}
                         pnpm install --frozen-lockfile
                         pnpm build
                     '''
@@ -50,6 +65,12 @@ pipeline {
                 }
             }
         }
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '5'))
+        disableConcurrentBuilds()
+        timeout(time: 30, unit: 'MINUTES')
     }
 }
 
