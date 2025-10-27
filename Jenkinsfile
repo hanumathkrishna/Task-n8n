@@ -14,10 +14,24 @@ pipeline {
             }
         }
 
+        stage('Build and Compile n8n') {
+            steps {
+                script {
+                    echo "Installing dependencies and building n8n..."
+                    sh '''
+                        corepack enable
+                        corepack prepare pnpm@10.18.3 --activate
+                        pnpm install --frozen-lockfile
+                        pnpm build
+                    '''
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    echo "Building Docker image from source using pnpm..."
+                    echo "Building Docker image..."
                     sh '''
                         docker build -t ${DOCKER_IMAGE} -f docker/images/n8n/Dockerfile .
                     '''
