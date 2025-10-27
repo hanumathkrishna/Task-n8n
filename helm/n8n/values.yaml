@@ -7,11 +7,11 @@ image:
 
 service:
   type: NodePort
-  port: 9001
-  targetPort: 9001
+  port: 5678
+  targetPort: 5678
   nodePort: 31001
 
-containerPort: 9001
+containerPort: 5678
 
 resources: {}
 
