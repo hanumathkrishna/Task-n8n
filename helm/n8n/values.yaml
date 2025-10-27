@@ -1,0 +1,17 @@
+replicaCount: 1
+
+image:
+  repository: hanumath/n8n-task
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 9001
+  nodePort: 7001
+
+containerPort: 9001
+
+resources: {}
+
