@@ -2,12 +2,12 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub')
-        DOCKER_IMAGE = "hanumath/n8n-task"
-        KUBE_CONTEXT = "kind-devops-task"
+        DOCKER_IMAGE = "hanumath/n8n-task:latest"
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub')  // Jenkins ID for Docker Hub login
     }
 
     stages {
+
         stage('Checkout Code') {
             steps {
                 checkout scm
@@ -17,29 +17,40 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    dir('docker/images/n8n') {
-                        sh "docker build -t $DOCKER_IMAGE:latest ."
-                    }
+                    echo "Building Docker image from docker/images/n8n/Dockerfile..."
+                    // Build from repo root, specify path to Dockerfile
+                    sh """
+                        docker build -t ${DOCKER_IMAGE} -f docker/images/n8n/Dockerfile .
+                    """
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                withDockerRegistry([credentialsId: 'dockerhub', url: 'https://index.docker.io/v1/']) {
-                    sh "docker push $DOCKER_IMAGE:latest"
+                script {
+                    echo "Pushing image to Docker Hub..."
+                    sh """
+                        echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin
+                        docker push ${DOCKER_IMAGE}
+                    """
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                kubectl config use-context ${KUBE_CONTEXT}
-                kubectl delete deployment n8n-task-deployment --ignore-not-found=true
-                kubectl apply -f k8s/
-                '''
+                script {
+                    echo "Deploying image to Kubernetes..."
+                    // optional - modify this for your K8s cluster or skip for now
+                    sh """
+                        kubectl set image deployment/n8n-deployment n8n-container=${DOCKER_IMAGE} --namespace=default || true
+                        kubectl rollout restart deployment/n8n-deployment --namespace=default || true
+                    """
+                }
             }
         }
     }
+
 }
+
