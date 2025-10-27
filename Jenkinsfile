@@ -17,7 +17,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    dir('docker/images/n8n-task') {
+                    dir('docker/images/n8n') {
                         sh "docker build -t $DOCKER_IMAGE:latest ."
                     }
                 }
