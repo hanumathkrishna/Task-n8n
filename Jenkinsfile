@@ -10,19 +10,29 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
+                echo "Checking out source code..."
                 checkout scm
+            }
+        }
+
+        stage('Install and Build Source') {
+            steps {
+                script {
+                    echo "Installing dependencies and building the n8n source..."
+                    sh """
+                        cd docker/images/n8n
+                        npm install
+                        npm run build
+                    """
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    echo "Building Docker image from docker/images/n8n/Dockerfile..."
+                    echo "Building Docker image using project Dockerfile..."
                     sh """
-                        cd docker/images/n8n
-                        npm install
-                        npm run build
-                        cd ../../..
                         docker build -t ${DOCKER_IMAGE} -f docker/images/n8n/Dockerfile .
                     """
                 }
@@ -44,7 +54,7 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    echo "Deploying updated image to Kubernetes..."
+                    echo "Deploying latest image to Kubernetes..."
                     sh """
                         kubectl set image deployment/n8n-deployment n8n-container=${DOCKER_IMAGE} --namespace=default || true
                         kubectl rollout restart deployment/n8n-deployment --namespace=default || true
