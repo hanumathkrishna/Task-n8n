@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "hanumath/n8n-task:latest"
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub')  // Jenkins ID for Docker Hub login
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub')
     }
 
     stages {
@@ -18,8 +18,11 @@ pipeline {
             steps {
                 script {
                     echo "Building Docker image from docker/images/n8n/Dockerfile..."
-                    // Build from repo root, specify path to Dockerfile
                     sh """
+                        cd docker/images/n8n
+                        npm install
+                        npm run build
+                        cd ../../..
                         docker build -t ${DOCKER_IMAGE} -f docker/images/n8n/Dockerfile .
                     """
                 }
@@ -41,8 +44,7 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    echo "Deploying image to Kubernetes..."
-                    // optional - modify this for your K8s cluster or skip for now
+                    echo "Deploying updated image to Kubernetes..."
                     sh """
                         kubectl set image deployment/n8n-deployment n8n-container=${DOCKER_IMAGE} --namespace=default || true
                         kubectl rollout restart deployment/n8n-deployment --namespace=default || true
@@ -51,6 +53,5 @@ pipeline {
             }
         }
     }
-
 }
 
